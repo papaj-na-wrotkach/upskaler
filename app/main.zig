@@ -48,7 +48,6 @@ pub fn main() !void {
 			std.debug.print("Refusing to register duplicate plugin.\n", .{});
 			return;
 		}
-		res.key_ptr.* = name;
 
 		const plugin_path = try std.fs.path.join(gpa, &[_][]const u8{ plugin_path_base, "/libplugskaler-" ++ name ++ ".so" });
 		defer gpa.free(plugin_path);
@@ -61,8 +60,8 @@ pub fn main() !void {
 		}
 	}
 
-	var it = plugin_registry.valueIterator();
-	while (it.next()) |pm| {
-		std.debug.print("test_int: {}\n", .{ pm.plugin.test_int });
+	var it = plugin_registry.iterator();
+	while (it.next()) |kv| {
+		std.debug.print("{s}: {}\n", .{ kv.key_ptr.*, kv.value_ptr.plugin });
 	}
 }
