@@ -48,8 +48,7 @@ pub fn build(b: *std.Build) void {
 		.root_source_file = b.path("src/root.zig"),
 		.target = target,
 		.imports = &.{
-			// might need access to the API later
-			// .{ .name = "plugskaler-api", .module = plugskaler_api },
+			.{ .name = "plugskaler-api", .module = plugskaler_api },
 		},
 	});
 

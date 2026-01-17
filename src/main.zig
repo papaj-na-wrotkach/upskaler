@@ -11,34 +11,20 @@ const tardy = zzz.tardy;
 
 const Tardy = tardy.Tardy(.io_uring);
 
-const PluginManager = struct {
-	lib: std.DynLib,
-	plugin: *UpskalerPlugin,
-
-	const Self = @This();
-	const Error = std.DynLib.Error || error{ SymbolNotFound };
-
-	pub fn init(path: []const u8) Error!Self {
-		var lib = try std.DynLib.open(path);
-		return Self{
-			.lib = lib,
-			.plugin = lib.lookup(*UpskalerPlugin, "plugin") orelse {
-				defer lib.close();
-				return error.SymbolNotFound;
-			},
-		};
+fn base_handler(ctx: *const http.Context, app: *const upskaler.AppContext) !http.Respond {
+	var buffer = std.ArrayList(u8).init(ctx.allocator);
+	const writer = buffer.writer();
+	try std.fmt.format(writer, "<ul>plugins:", .{ });
+	var it = app.plugin_registry.iterator();
+	while (it.next()) |kv| {
+		try std.fmt.format(writer, "<li>{s}: {}</li>", .{ kv.key_ptr.*, kv.value_ptr.plugin });
 	}
+	try std.fmt.format(writer, "</ul>", .{ });
 
-	pub fn deinit(self: *Self) void {
-		self.lib.close();
-	}
-};
-
-fn base_handler(ctx: *const http.Context, _: void) !http.Respond {
 	return ctx.response.apply(.{
 		.status = .OK,
 		.mime = http.Mime.HTML,
-		.body = "Hello, world!",
+		.body = buffer.items,
 	});
 }
 
@@ -65,7 +51,7 @@ pub fn main() !void {
 	var config: Config = .{};
 	config.addLayer(try ConfigLayer.fromSlice(gpa, buffer, .{}));
 
-	var plugin_registry = std.StringHashMap(PluginManager).init(arena.allocator());
+	var plugin_registry = std.StringHashMap(upskaler.PluginManager).init(arena.allocator());
 	defer plugin_registry.deinit();
 
 	const exe_path = try std.fs.selfExeDirPathAlloc(gpa);
@@ -83,7 +69,7 @@ pub fn main() !void {
 
 		const plugin_path = try std.fs.path.join(gpa, &[_][]const u8{ plugin_path_base, "/libplugskaler-" ++ name ++ ".so" });
 		defer gpa.free(plugin_path);
-		res.value_ptr.* = try PluginManager.init(plugin_path);
+		res.value_ptr.* = try upskaler.PluginManager.init(plugin_path);
 	}
 	defer {
 		var it = plugin_registry.valueIterator();
@@ -92,16 +78,16 @@ pub fn main() !void {
 		}
 	}
 
-	var it = plugin_registry.iterator();
-	while (it.next()) |kv| {
-		std.debug.print("{s}: {}\n", .{ kv.key_ptr.*, kv.value_ptr.plugin });
-	}
+	const app_context: upskaler.AppContext = .{
+		.config = &config,
+		.plugin_registry = &plugin_registry,
+	};
 
 	var t = try Tardy.init(gpa, .{ .threading = .auto });
 	defer t.deinit();
 
 	var router = try http.Router.init(gpa, &.{
-		http.Route.init("/").get({}, base_handler).layer(),
+		http.Route.init("/").get(&app_context, base_handler).layer(),
 	}, .{});
 	defer router.deinit(gpa);
 
@@ -110,6 +96,8 @@ pub fn main() !void {
 	defer socket.close_blocking();
 	try socket.bind();
 	try socket.listen(4096);
+
+	std.debug.print("Running on socket: {}", .{ socket });
 
 	const EntryParams = struct {
 		router: *const http.Router,
