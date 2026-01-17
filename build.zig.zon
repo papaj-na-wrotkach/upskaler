@@ -65,14 +65,14 @@
         //    .lazy = false,
         //},
         .plugskaler_api = .{
-            .path = "../lib/plugskaler-api",
+            .path = "lib/plugskaler-api",
         },
         .plugskaler_realcugan = .{
-            .path = "../lib/plugskaler-realcugan",
+            .path = "lib/plugskaler-realcugan",
             .lazy = true,
         },
         .plugskaler_waifu2x = .{
-            .path = "../lib/plugskaler-waifu2x",
+            .path = "lib/plugskaler-waifu2x",
             .lazy = true,
         },
         .zzz = .{

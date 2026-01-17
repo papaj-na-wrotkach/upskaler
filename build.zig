@@ -45,7 +45,7 @@ pub fn build(b: *std.Build) void {
 	// Define the library module of the app (unused for now).
 
 	const mod = b.addModule("upskaler", .{
-		.root_source_file = b.path("root.zig"),
+		.root_source_file = b.path("src/root.zig"),
 		.target = target,
 		.imports = &.{
 			// might need access to the API later
@@ -58,7 +58,7 @@ pub fn build(b: *std.Build) void {
 	const exe = b.addExecutable(.{
 		.name = "upskaler",
 		.root_module = b.createModule(.{
-			.root_source_file = b.path("main.zig"),
+			.root_source_file = b.path("src/main.zig"),
 			.target = target,
 			.optimize = optimize,
 			.imports = &.{
