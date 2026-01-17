@@ -35,6 +35,13 @@ pub fn build(b: *std.Build) void {
 		b.installArtifact(libplugskaler_waifu2x.?.artifact("plugskaler-waifu2x"));
 	}
 
+	// ZZZ
+	const libzzz = b.dependency("zzz", .{
+		.target = target,
+		.optimize = optimize,
+	});
+	const zzz = libzzz.module("zzz");
+
 	// Define the library module of the app (unused for now).
 
 	const mod = b.addModule("upskaler", .{
@@ -57,15 +64,25 @@ pub fn build(b: *std.Build) void {
 			.imports = &.{
 				.{ .name = "upskaler", .module = mod }, // the library module of the app
 				.{ .name = "plugskaler-api", .module = plugskaler_api }, // the plugin API
+				.{ .name = "zzz", .module = zzz },
 			},
 		}),
 	});
 
-	// Install the executable.
+	const install_step = b.getInstallStep();
+
+	// Install the executable and config.
 
 	b.installArtifact(exe);
+	install_step.dependOn(&b.addInstallFileWithDir(b.path("conf.zon"), .{ .custom = b.pathJoin(&[_][]const u8{ "etc", "upskaler" }) }, "conf.zon" ).step);
 
-	// Make the app executable by simply running `zig build run`.
+	// Create empty directory for drop-in configuration files.
+
+	var dropin_conf_dir_step = b.step("mkdir_conf_d", "Create empty directory for drop-in configuration files.");
+	install_step.dependOn(dropin_conf_dir_step);
+	dropin_conf_dir_step.makeFn = mkdir_conf_d;
+
+	// Enable the app to run with `zig build run`.
 
 	const run_step = b.step("run", "Run the app");
 
@@ -73,12 +90,14 @@ pub fn build(b: *std.Build) void {
 
 	const run_cmd = b.addRunArtifact(exe);
 	run_step.dependOn(&run_cmd.step);
-	run_cmd.step.dependOn(b.getInstallStep()); // We need to install the executable and plugins before using them
+	// Install the executable and plugins before using them.
+	run_cmd.step.dependOn(install_step);
 	if (b.args) |args| {
-		run_cmd.addArgs(args); // Pass the arguments to the executable.
+		// Pass the arguments to the executable.
+		run_cmd.addArgs(args);
 	}
 
-	//TODO: configure and use tests
+	//TODO: Configure and use tests.
 
 	// Creates an executable that will run `test` blocks from the provided module.
 	// Here `mod` needs to define a target, which is why earlier we made sure to
@@ -118,4 +137,10 @@ pub fn build(b: *std.Build) void {
 	//
 	// Lastly, the Zig build system is relatively simple and self-contained,
 	// and reading its source code will allow you to master it.
+}
+
+fn mkdir_conf_d(step: *std.Build.Step, _: std.Build.Step.MakeOptions) anyerror!void  {
+	const b = step.owner;
+	const full_path = b.getInstallPath(.{ .custom = "etc" }, b.pathJoin(&[_][]const u8{ "upskaler", "conf.d" }));
+	try std.fs.cwd().makeDir(full_path);
 }

@@ -1,9 +1,3 @@
 [submodule "lib/plugskaler-api"]
 	path = lib/plugskaler-api
 	url = https://github.com/papaj-na-wrotkach/plugskaler-api.git
-[submodule "lib/plugskaler-realcugan"]
-	path = lib/plugskaler-realcugan
-	url = https://github.com/papaj-na-wrotkach/plugskaler-realcugan.git
-[submodule "lib/plugskaler-waifu2x"]
-	path = lib/plugskaler-waifu2x
-	url = https://github.com/papaj-na-wrotkach/plugskaler-waifu2x.git

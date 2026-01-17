@@ -1,0 +1,5 @@
+const Plugin = @import("plugskaler-api").UpskalerPlugin;
+
+export const plugin = Plugin{
+	.test_int = 69,
+};

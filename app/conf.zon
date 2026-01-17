@@ -1,0 +1,8 @@
+// This is a template configuration file of Upskaler.
+// Copy it to /etc/upskaler/conf.d/ and edit there instead of making changes to this file.
+.{
+	// default values
+	// .host = "::",
+	// .port = 0,
+	.port = 9239,
+}

@@ -1,0 +1,14 @@
+.{
+	.name = .plugscaler_realcugan,
+	.version = "0.0.1",
+	.fingerprint = 0x46cfc7b33eed40da,
+	.minimum_zig_version = "0.14.0",
+	.paths = .{
+		"build.zig",
+		"build.zig.zon",
+		"root.zig",
+	},
+	.dependencies = .{
+		.plugskaler_api = .{ .path = "../plugskaler-api", }
+	},
+}
