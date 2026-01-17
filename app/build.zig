@@ -80,7 +80,12 @@ pub fn build(b: *std.Build) void {
 
 	var dropin_conf_dir_step = b.step("mkdir_conf_d", "Create empty directory for drop-in configuration files.");
 	install_step.dependOn(dropin_conf_dir_step);
-	dropin_conf_dir_step.makeFn = mkdir_conf_d;
+	dropin_conf_dir_step.makeFn = struct {
+		fn func(step: *std.Build.Step, _: std.Build.Step.MakeOptions) anyerror!void  {
+			const full_path = step.owner.getInstallPath(.{ .custom = "etc" }, step.owner.pathJoin(&[_][]const u8{ "upskaler", "conf.d" }));
+			try std.fs.cwd().makePath(full_path);
+		}
+	}.func;
 
 	// Enable the app to run with `zig build run`.
 
@@ -137,10 +142,4 @@ pub fn build(b: *std.Build) void {
 	//
 	// Lastly, the Zig build system is relatively simple and self-contained,
 	// and reading its source code will allow you to master it.
-}
-
-fn mkdir_conf_d(step: *std.Build.Step, _: std.Build.Step.MakeOptions) anyerror!void  {
-	const b = step.owner;
-	const full_path = b.getInstallPath(.{ .custom = "etc" }, b.pathJoin(&[_][]const u8{ "upskaler", "conf.d" }));
-	try std.fs.cwd().makeDir(full_path);
 }
